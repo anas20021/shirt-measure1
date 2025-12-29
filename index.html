@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام تفصيل القمصان (Sur Mesure)</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #c0392b;
+            --bg-color: #f3f5f7;
+            --info-bg: #fff8e1;
+            --info-text: #856404;
+            --shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: #333; 
+            line-height: 1.6; 
+            padding: 15px; 
+            direction: rtl; 
+        }
+        
+        .container {
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background-color: white;
+            border-radius: 16px; 
+            box-shadow: var(--shadow); 
+            padding: 25px;
+            overflow: hidden; /* لمنع أي تمدد خارج الإطار */
+        }
+        
+        header { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 15px; 
+        }
+        
+        h1 { color: var(--primary-color); font-size: 1.8rem; margin-bottom: 8px; }
+        .subtitle { color: #7f8c8d; font-size: 1rem; }
+        
+        /* تخطيط مرن يتجاوب مع الشاشات */
+        .main-content { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 25px; 
+            align-items: flex-start;
+        }
+        
+        /* القسم الأيمن: النموذج */
+        .measurements-form {
+            flex: 1; 
+            min-width: 320px; 
+            background-color: #fff;
+        }
+        
+        /* القسم الأيسر: الرسم */
+        .shirt-display {
+            flex: 1.5; 
+            min-width: 320px; 
+            background: #fdfdfd; 
+            border-radius: 12px; 
+            border: 1px solid #eee;
+            padding: 15px;
+            position: sticky;
+            top: 20px; /* يثبت الرسم عند التمرير في الشاشات الكبيرة */
+        }
+
+        /* تنسيق قسم التعليمات */
+        .instructions-box {
+            background-color: var(--info-bg);
+            color: var(--info-text);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ffeeba;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+        
+        .instructions-box summary {
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px;
+            outline: none;
+            list-style: none;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .instructions-box summary::after { content: "▼"; font-size: 0.8em; transition: 0.3s; }
+        .instructions-box[open] summary::after { transform: rotate(180deg); }
+        
+        .tips-list { margin-top: 15px; padding-right: 20px; font-size: 0.9em; }
+        .tips-list li { margin-bottom: 8px; }
+        
+        /* الحقول */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group { margin-bottom: 0; } /* المسافة يتحكم بها الغريد */
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            color: var(--primary-color); 
+            font-size: 0.9rem; 
+        }
+        
+        input[type="number"] {
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 2px solid #e0e0e0;
+            border-radius: 10px; 
+            font-size: 16px; /* حجم 16 يمنع الزووم في الآيفون */
+            transition: 0.2s;
+            background-color: #fbfbfb;
+            appearance: none; -moz-appearance: none; /* إخفاء أسهم الأرقام الافتراضية */
+        }
+        
+        input[type="number"]:focus { 
+            border-color: var(--primary-color); 
+            background-color: #fff; 
+            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+            outline: none; 
+        }
+        
+        .unit { color: #95a5a6; font-size: 0.75em; display: block; margin-top: 2px; font-weight: normal; }
+        
+        /* الأزرار */
+        .btn-group { 
+            display: flex; 
+            gap: 12px; 
+            margin-top: 25px; 
+            grid-column: 1 / -1;
+        }
+        
+        .btn {
+            flex: 1; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 10px;
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold; 
+            transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .btn:active { transform: scale(0.98); }
+        
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #1a252f; }
+        
+        .btn-download { background-color: var(--accent-color); color: white; }
+        .btn-download:hover { background-color: #a93226; }
+        
+        /* منطقة الرسم */
+        .canvas-container {
+            width: 100%; 
+            height: 550px; 
+            background-color: white;
+            border-radius: 10px; 
+            overflow: hidden; 
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
+        }
+        
+        #shirtCanvas { width: 100%; height: 100%; display: block; }
+
+        /* =========================================
+           Media Queries - سر التجاوب مع الأجهزة
+           ========================================= */
+        
+        /* للأجهزة اللوحية والموبايل (أقل من 900px) */
+        @media (max-width: 900px) {
+            .container { padding: 15px; width: 100%; margin: 0; border-radius: 0; box-shadow: none; }
+            body { padding: 0; background-color: white; }
+            .main-content { flex-direction: column; gap: 30px; }
+            .measurements-form, .shirt-display { min-width: 100%; flex: 1; }
+            .shirt-display { order: -1; /* رفع الرسم للأعلى في الموبايل ليرى المستخدم النتيجة فوراً */ position: relative; top: 0; padding: 0; border: none; }
+            .canvas-container { height: 350px; /* تقليل ارتفاع الرسم في الموبايل */ }
+            h1 { font-size: 1.5rem; }
+            .form-grid { grid-template-columns: 1fr 1fr; /* حقلين في الصف */ }
+        }
+
+        /* للموبايل الصغير جداً (أقل من 400px) */
+        @media (max-width: 400px) {
+            .form-grid { grid-template-columns: 1fr; /* حقل واحد في الصف */ }
+            .btn-group { flex-direction: column; }
+            .canvas-container { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>نظام تفصيل القمصان</h1>
+            <p class="subtitle">أدخل قياساتك وسنقوم برسم الباترون بدقة</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="measurements-form">
+                
+                <details class="instructions-box">
+                    <summary>📏 اضغط هنا: كيف تقيس بدقة؟</summary>
+                    <ul class="tips-list">
+                        <li><strong>💡 نصيحة ذهبية:</strong> اطلب مساعدة صديق، لا تقِس نفسك بنفسك.</li>
+                        <li><strong>1. الرقبة:</strong> حول أسفل الرقبة + إصبع راحة.</li>
+                        <li><strong>2. الكتف:</strong> من عظمة الكتف لليمن لليسرى (من الخلف).</li>
+                        <li><strong>3. الصدر:</strong> تحت الإبطين (أعرض منطقة) والمتر مرتاح.</li>
+                        <li><strong>4. الكرش:</strong> عند السرة تماماً (بدون شفط البطن!).</li>
+                        <li><strong>5. الذراع:</strong> من عظمة الكتف إلى المعصم.</li>
+                        <li><strong>6. العضلة:</strong> حول أضخم منطقة في الذراع.</li>
+                    </ul>
+                </details>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>عرض الكتف <span class="unit">(سم)</span></label>
+                        <input type="number" id="shoulder" value="46" placeholder="46">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>دائرة الرقبة <span class="unit">(سم)</span></label>
+                        <input type="number" id="neck" value="42" placeholder="42">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>طول الذراع <span class="unit">(سم)</span></label>
+                        <input type="number" id="armLength" value="62" placeholder="62">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>دائرة الذراع <span class="unit">(سم)</span></label>
+                        <input type="number" id="armCircle" value="38" placeholder="38">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>محيط الصدر <span class="unit">(سم)</span></label>
+                        <input type="number" id="chest" value="104" placeholder="104">
+                    </div>
+
+                    <div class="form-group">
+                        <label>محيط الكرش <span class="unit">(سم)</span></label>
+                        <input type="number" id="waist" value="96" placeholder="96">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label>الطول الكلي للقميص <span class="unit">(من الكتف للأسفل)</span></label>
+                        <input type="number" id="shoulderToNavel" value="75" placeholder="75">
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="generateBtn" class="btn btn-primary">تحديث الرسم ↻</button>
+                    <button id="downloadBtn" class="btn btn-download">حفظ الصورة 📥</button>
+                </div>
+            </div>
+            
+            <div class="shirt-display">
+                <div class="canvas-container">
+                    <canvas id="shirtCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p style="text-align: center; margin-top: 20px; color: #aaa; font-size: 0.8em;">نظام إدارة المشغل © 2024</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('shirtCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // دالة ضبط حجم الكانفاس لتكون متجاوبة
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                // نستخدم عرض الحاوية الحالي
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                // زيادة دقة البكسل للشاشات عالية الدقة (Retina)
+                canvas.width = width * 2;
+                canvas.height = height * 2;
+                
+                // ضبط الحجم الظاهري في CSS
+                canvas.style.width = width + "px";
+                canvas.style.height = height + "px";
+                
+                // التكبير داخل الرسم
+                ctx.scale(2, 2);
+                
+                drawShirt();
+            }
+            
+            function getInputs() {
+                return {
+                    shoulder: parseFloat(document.getElementById('shoulder').value) || 45,
+                    neck: parseFloat(document.getElementById('neck').value) || 40,
+                    armLength: parseFloat(document.getElementById('armLength').value) || 60,
+                    armCircle: parseFloat(document.getElementById('armCircle').value) || 35,
+                    chest: parseFloat(document.getElementById('chest').value) || 100,
+                    waist: parseFloat(document.getElementById('waist').value) || 90,
+                    length: parseFloat(document.getElementById('shoulderToNavel').value) || 70
+                };
+            }
+
+            function drawShirt() {
+                const m = getInputs();
+                // نستخدم الأبعاد الحالية للكانفاس (مقسومة على 2 لأننا عملنا scale)
+                const w = canvas.width / 2;
+                const h = canvas.height / 2;
+                
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, w, h);
+                
+                const cx = w / 2;
+                // ضبط نقطة البداية بناء على ارتفاع الشاشة
+                const topY = h * 0.1; // 10% من الأعلى
+                
+                // حساب معامل التكبير ديناميكياً ليناسب الشاشة
+                // كلما كبرت القياسات أو صغرت الشاشة، يتغير الحجم
+                const maxBodyWidth = Math.max(m.chest, m.waist, m.shoulder * 1.5);
+                const totalHeight = m.length + 40; // الطول + الرقبة
+                
+                // معادلة لحساب أفضل Zoom
+                const scaleX = (w * 0.7) / (maxBodyWidth / 2); // استغلال 70% من العرض
+                const scaleY = (h * 0.8) / totalHeight;        // استغلال 80% من الطول
+                const scale = Math.min(scaleX, scaleY); // نأخذ القيمة الأقل لضمان ظهور الرسم بالكامل
+
+                const shoulderPx = (m.shoulder / 2) * scale;
+                const neckPx = (m.neck / 6) * scale; 
+                const chestPx = (m.chest / 4) * scale; 
+                const waistPx = (m.waist / 4) * scale; 
+                const lengthPx = m.length * scale;
+                const armLenPx = m.armLength * scale;
+                const armWidthPx = (m.armCircle / 2) * scale;
+
+                ctx.strokeStyle = "#2c3e50";
+                ctx.lineWidth = 2;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+
+                // --- رسم الجسم ---
+                ctx.beginPath();
+                ctx.fillStyle = "#eaf2f8"; 
+                ctx.moveTo(cx - neckPx, topY);
+                ctx.quadraticCurveTo(cx, topY + (neckPx/1.5), cx + neckPx, topY); 
+                ctx.lineTo(cx + shoulderPx, topY + (15 * scale/3.5)); // ميلان الكتف متناسب
+                ctx.quadraticCurveTo(cx + chestPx, topY + (50 * scale/3.5), cx + chestPx, topY + (100 * scale/3.5)); 
+                ctx.lineTo(cx + waistPx, topY + lengthPx); 
+                ctx.quadraticCurveTo(cx, topY + lengthPx + (10 * scale/3.5), cx - waistPx, topY + lengthPx); 
+                ctx.lineTo(cx - chestPx, topY + (100 * scale/3.5)); 
+                ctx.quadraticCurveTo(cx - chestPx, topY + (50 * scale/3.5), cx - shoulderPx, topY + (15 * scale/3.5)); 
+                ctx.lineTo(cx - neckPx, topY);
+                ctx.fill();
+                ctx.stroke();
+
+                // --- رسم الأكمام ---
+                ctx.fillStyle = "#d6eaf8"; 
+                
+                // الكم الأيمن
+                const rShoulderX = cx + shoulderPx;
+                const rShoulderY = topY + (15 * scale/3.5);
+                // زاوية الكم لأسفل قليلاً
+                const rWristX = rShoulderX + (armLenPx * 0.85); 
+                const rWristY = rShoulderY + (armLenPx * 0.4);
+
+                ctx.beginPath();
+                ctx.moveTo(rShoulderX, rShoulderY);
+                ctx.lineTo(rWristX, rWristY); 
+                ctx.lineTo(rWristX - (5 * scale/3.5), rWristY + (armWidthPx*0.6));
+                ctx.lineTo(cx + chestPx, topY + (80 * scale/3.5));
+                ctx.fill(); 
+                ctx.stroke();
+
+                // الكم الأيسر
+                ctx.beginPath();
+                ctx.moveTo(cx - shoulderPx, topY + (15 * scale/3.5));
+                ctx.lineTo(cx - shoulderPx - (armLenPx * 0.85), topY + (15 * scale/3.5) + (armLenPx * 0.4));
+                ctx.lineTo(cx - shoulderPx - (armLenPx * 0.8), topY + (15 * scale/3.5) + (armLenPx * 0.4) + (armWidthPx*0.6));
+                ctx.lineTo(cx - chestPx, topY + (80 * scale/3.5));
+                ctx.fill();
+                ctx.stroke();
+
+                // --- خطوط القياس ---
+                // تم تعديل الإزاحات لتكون نسبية بناءً على scale
+                drawDimensionLine(cx - shoulderPx, topY - (20 * scale/3.5), cx + shoulderPx, topY - (20 * scale/3.5), `الكتف: ${m.shoulder}`);
+                drawDimensionLine(cx - neckPx, topY - 5, cx + neckPx, topY - 5, `الرقبة: ${m.neck}`);
+                
+                const chestLineY = topY + (105 * scale/3.5);
+                drawDimensionLine(cx - chestPx, chestLineY, cx + chestPx, chestLineY, `الصدر: ${m.chest}`);
+
+                const waistLineY = topY + lengthPx - (40 * scale/3.5);
+                drawDimensionLine(cx - waistPx, waistLineY, cx + waistPx, waistLineY, `الكرش: ${m.waist}`);
+
+                drawDimensionLine(cx - shoulderPx - (30 * scale/3.5), topY + (15 * scale/3.5), cx - shoulderPx - (30 * scale/3.5), topY + lengthPx, `الطول: ${m.length}`);
+
+                drawDimensionLine(rShoulderX, rShoulderY - 10, rWristX, rWristY - 10, `الذراع: ${m.armLength}`);
+
+                const bicepX = rShoulderX + (rWristX - rShoulderX) * 0.3;
+                const bicepY = rShoulderY + (rWristY - rShoulderY) * 0.3;
+                // تصحيح زاوية خط العضلة ليكون عمودياً على الذراع
+                drawDimensionLine(bicepX, bicepY, bicepX, bicepY + armWidthPx, `عضلة: ${m.armCircle}`);
+            }
+
+            function drawDimensionLine(x1, y1, x2, y2, text) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.strokeStyle = "#c0392b";
+                ctx.fillStyle = "#c0392b";
+                ctx.lineWidth = 1.5; // خط أسمك قليلاً
+                
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                ctx.beginPath(); ctx.arc(x1, y1, 3, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(x2, y2, 3, 0, Math.PI*2); ctx.fill();
+
+                ctx.font = "bold 12px Tahoma"; // تكبير الخط قليلاً
+                ctx.textAlign = "center";
+                
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                
+                const textWidth = ctx.measureText(text).width;
+                ctx.fillStyle = "rgba(255,255,255,0.85)";
+                ctx.fillRect(midX - textWidth/2 - 4, midY - 12, textWidth + 8, 16);
+                
+                ctx.fillStyle = "#c0392b";
+                ctx.fillText(text, midX, midY);
+                ctx.restore();
+            }
+
+            document.getElementById('generateBtn').addEventListener('click', drawShirt);
+            document.querySelectorAll('input').forEach(i => i.addEventListener('input', drawShirt));
+
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                const link = document.createElement('a');
+                link.download = `patron-${Date.now()}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 1.0);
+                link.click();
+            });
+
+            // تحديث الرسم عند تغيير حجم النافذة أو تدوير الهاتف
+            window.addEventListener('resize', resizeCanvas);
+            // تأخير بسيط للتأكد من تحميل الخطوط والأبعاد
+            setTimeout(resizeCanvas, 100);
+        });
+    </script>
+</body>
+</html>
